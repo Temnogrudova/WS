@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.websocketproject.databinding.ActivityMainBinding
@@ -19,7 +18,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var mWebSocketClient: WebSocketClient? = null
     private var items: ArrayList<GroceryModel?> = arrayListOf()
-
+    private var isConnected: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,22 +60,31 @@ class MainActivity : AppCompatActivity() {
             )
         }
     }
+
     private val adapterInteractionCallbackImpl = object:
             ItemsListAdapter.InteractionListener {
         override fun onItemClick(v: View, grocery: GroceryModel?) {
-            grocery?.let { it ->
+            grocery?.bagColor?.let { it ->
                Log.d("myLog", "clicked")
-                val secondFragment = SecondFragment()
-                loadFragment(secondFragment)
+               loadFragment(it)
             }
         }
     }
-    private fun loadFragment(fragment: Fragment){
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.fragment_second, fragment)
-        transaction.disallowAddToBackStack()
-        transaction.commit()
+
+    private fun loadFragment(color: String){
+        if (!isConnected) {
+            val fragment = SecondFragment()
+            val bundle = Bundle()
+            bundle.putString("color", color)
+            fragment.arguments = bundle
+            val transaction = supportFragmentManager.beginTransaction()
+            transaction.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_in_left);
+            transaction.add(R.id.container, fragment)
+            transaction.disallowAddToBackStack()
+            transaction.commit()
+        }
     }
+
     private fun connectWebSocket() {
         val uri: URI
         try {
@@ -88,6 +96,7 @@ class MainActivity : AppCompatActivity() {
         mWebSocketClient = object : WebSocketClient(uri) {
             override fun onOpen(serverHandshake: ServerHandshake) {
                 Log.i("Websocket", "Opened")
+                isConnected = true
             }
 
             override fun onMessage(response: String) {
@@ -97,6 +106,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onClose(i: Int, s: String, b: Boolean) {
                 Log.i("Websocket", "Closed $s")
+                isConnected = false
 
             }
 
