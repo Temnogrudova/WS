@@ -11,14 +11,14 @@ import androidx.recyclerview.widget.RecyclerView
 
 
 class ItemsListAdapter(
-    private var items: List<ItemModel?>
+    private var items: List<GroceryModel?>
     //private val interactionListener: InteractionListener
 ) : RecyclerView.Adapter<ItemsListAdapter.BaseViewHolder>() {
 
 //    interface InteractionListener {
 //        fun onItemClick(v: View, feed: ItemModel?)
 //    }
-    fun setData(items: List<ItemModel?>) {
+    fun setData(items: List<GroceryModel?>) {
         this.items = items
         notifyDataSetChanged()
     }
@@ -32,8 +32,8 @@ class ItemsListAdapter(
     inner class ItemViewHolder (itemView: View) : BaseViewHolder(itemView) {
         var mTitle: TextView = itemView.findViewById(R.id.title)
 
-        fun bind(item: ItemModel?) {
-            item?.price?.let {
+        fun bind(item: GroceryModel?) {
+            item?.name?.let {
                 mTitle.text = it
             }
             itemView.background = ColorDrawable(Color.parseColor("#FF00FF00"))

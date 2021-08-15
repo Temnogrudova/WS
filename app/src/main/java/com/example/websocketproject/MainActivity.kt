@@ -6,6 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.websocketproject.databinding.ActivityMainBinding
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import org.java_websocket.client.WebSocketClient
@@ -18,7 +20,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var mWebSocketClient: WebSocketClient? = null
-    private var items: ArrayList<ItemModel?> = arrayListOf()
+    private var items: ArrayList<GroceryModel?> = arrayListOf()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,15 +36,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initRecyclerView() {
-//
-//        var i1 = ItemModel(price = "3")
-//        var i2 = ItemModel(price = "32")
-//        var i3 = ItemModel(price = "33")
-//        var i4 = ItemModel(price = "53")
-//        items.add(i1)
-//        items.add(i2)
-//        items.add(i3)
-//        items.add(i4)
         var context  = this
         binding.rvItems.apply {
             binding.rvItems.setHasFixedSize(true)
@@ -62,7 +55,7 @@ class MainActivity : AppCompatActivity() {
     private fun connectWebSocket() {
         val uri: URI
         try {
-            uri = URI("wss://ws-feed.pro.coinbase.com")
+            uri = URI("wss://superdo-groceries.herokuapp.com/receive")
         } catch (e: URISyntaxException) {
             e.printStackTrace()
             return
@@ -71,7 +64,7 @@ class MainActivity : AppCompatActivity() {
             override fun onOpen(serverHandshake: ServerHandshake) {
                 Log.i("Websocket", "Opened")
                 //mWebSocketClient!!.send("Hello from " + Build.MANUFACTURER + " " + Build.MODEL)
-                fetchItems()
+               // fetchItems()
             }
 
             override fun onMessage(response: String) {
@@ -91,15 +84,15 @@ class MainActivity : AppCompatActivity() {
         }
         mWebSocketClient?.connect()
     }
-
-    private fun fetchItems() {
-        mWebSocketClient?.send(
-            "{\n" +
-                    "    \"type\": \"subscribe\",\n" +
-                    "    \"channels\": [{ \"name\": \"ticker\", \"product_ids\": [\"BTC-EUR\"] }]\n" +
-                    "}"
-        )
-    }
+//
+//    private fun fetchItems() {
+//        mWebSocketClient?.send(
+//            "{\n" +
+//                    "    \"type\": \"subscribe\",\n" +
+//                    "    \"channels\": [{ \"name\": \"ticker\", \"product_ids\": [\"BTC-EUR\"] }]\n" +
+//                    "}"
+//        )
+//    }
 
     private fun unregister() {
         mWebSocketClient?.send(
@@ -115,10 +108,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUI(response: String?) {
         response?.let {
-            val moshi = Moshi.Builder().build()
-            val adapter: JsonAdapter<ItemModel> = moshi.adapter(ItemModel::class.java)
-            val bitcoin = adapter.fromJson(response)
-             items.add(bitcoin)
+//            val moshi = Moshi.Builder().build()
+//            val adapter: JsonAdapter<ItemModel> = moshi.adapter(ItemModel::class.java)
+//            val bitcoin = adapter.fromJson(response)
+//            val bitcoin = Gson().fromJson<ItemModel>(response, ItemModel::class.java)
+//             items.add(bitcoin)
+
+            val groceryItem = Gson().fromJson<GroceryModel>(response, GroceryModel::class.java)
+            items.add(groceryItem)
             runOnUiThread {
                 (binding.rvItems.adapter as ItemsListAdapter).notifyDataSetChanged()
             }
@@ -128,3 +125,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+data class GroceryModel(
+        @SerializedName("name")
+        var name: String? = null,
+        @SerializedName("bagColor")
+        var bagColor: String? = null,
+        @SerializedName("weight")
+        var weight: String? = null
+)
