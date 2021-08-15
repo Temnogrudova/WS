@@ -3,6 +3,7 @@ package com.example.websocketproject
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,42 +20,36 @@ class MainActivity : AppCompatActivity() {
     private var mWebSocketClient: WebSocketClient? = null
     private var items: ArrayList<GroceryModel?> = arrayListOf()
     private var isConnected: Boolean = false
-
+    private var fragment: SecondFragment? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initBtnsClick()
         initRecyclerView()
+        onBackClick()
     }
 
-    override fun onResume() {
-        super.onResume()
-        connectWebSocket()
-    }
     private fun initBtnsClick() {
-        binding.btnConnect.setOnClickListener(View.OnClickListener {
+        binding.btnConnect.setOnClickListener {
             connectWebSocket()
-
-        })
-        binding.btnDisconnect.setOnClickListener(View.OnClickListener {
+        }
+        binding.btnDisconnect.setOnClickListener {
             mWebSocketClient?.close()
-
-        })
+        }
     }
 
     private fun initRecyclerView() {
-        var context  = this
         binding.rvItems.apply {
             binding.rvItems.setHasFixedSize(true)
-            binding.rvItems.layoutManager = LinearLayoutManager(context)
+            binding.rvItems.layoutManager = LinearLayoutManager(this@MainActivity)
             addItemDecoration(
                 DividerItemDecoration(
                     context,
                     DividerItemDecoration.VERTICAL
                 )
             )
-            binding.rvItems.adapter = ItemsListAdapter(
+            binding.rvItems.adapter = GroceryListAdapter(
                 items,
                 adapterInteractionCallbackImpl
             )
@@ -62,10 +57,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val adapterInteractionCallbackImpl = object:
-            ItemsListAdapter.InteractionListener {
+            GroceryListAdapter.InteractionListener {
         override fun onItemClick(v: View, grocery: GroceryModel?) {
             grocery?.bagColor?.let { it ->
-               Log.d("myLog", "clicked")
                loadFragment(it)
             }
         }
@@ -73,15 +67,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadFragment(color: String){
         if (!isConnected) {
-            val fragment = SecondFragment()
+            fragment = SecondFragment()
             val bundle = Bundle()
-            bundle.putString("color", color)
-            fragment.arguments = bundle
-            val transaction = supportFragmentManager.beginTransaction()
-            transaction.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_in_left);
-            transaction.add(R.id.container, fragment)
-            transaction.disallowAddToBackStack()
-            transaction.commit()
+            bundle.putString(BUNDLE_FIELD, color)
+            fragment?.let {
+                it.arguments = bundle
+                val transaction = supportFragmentManager.beginTransaction()
+                transaction.setCustomAnimations(R.anim.slide_in_left, R.anim.slide_in_left);
+                transaction.add(R.id.container, it)
+                transaction.disallowAddToBackStack()
+                transaction.commit()
+            }
         }
     }
 
@@ -127,12 +123,28 @@ class MainActivity : AppCompatActivity() {
             val groceryItem = Gson().fromJson<GroceryModel>(response, GroceryModel::class.java)
             items.add(groceryItem)
             runOnUiThread {
-                (binding.rvItems.adapter as ItemsListAdapter).notifyDataSetChanged()
+                (binding.rvItems.adapter as GroceryListAdapter).notifyDataSetChanged()
             }
         }
     }
 
+    private fun onBackClick() {
+        onBackPressedDispatcher?.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if(supportFragmentManager.fragments.size!=0)
+                {
+                    val transaction = supportFragmentManager.beginTransaction()
+                    supportFragmentManager.fragments.size
+                    fragment?.let { transaction.remove(it).commit() }
+                } else {
+                    finish()
+                }
+            }
+        })
+    }
+
     companion object {
         const val WS_URL = "wss://superdo-groceries.herokuapp.com/receive"
+        const val BUNDLE_FIELD = "color"
     }
 }

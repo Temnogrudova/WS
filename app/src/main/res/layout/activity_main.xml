@@ -7,24 +7,24 @@
     android:layout_height="match_parent"
     android:layout_margin="@dimen/margin"
     tools:context=".MainActivity">
+
     <Button
         android:id="@+id/btnConnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        android:text="@string/connect"
-        />
+        android:text="@string/connect" />
     <Button
         android:id="@+id/btnDisconnect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/btnConnect"
-        android:text="@string/disconnect"
-        />
+        app:layout_constraintRight_toRightOf="parent"
+        android:text="@string/disconnect" />
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvItems"
+        android:layout_marginTop="40dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintTop_toBottomOf="@id/btnConnect"

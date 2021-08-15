@@ -6,15 +6,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import de.hdodenhof.circleimageview.CircleImageView
 
 
-class ItemsListAdapter(
+class GroceryListAdapter(
     private var items: List<GroceryModel?>,
     private val interactionListener: InteractionListener
-) : RecyclerView.Adapter<ItemsListAdapter.BaseViewHolder>() {
+) : RecyclerView.Adapter<GroceryListAdapter.BaseViewHolder>() {
 
     interface InteractionListener {
         fun onItemClick(v: View, feed: GroceryModel?)
