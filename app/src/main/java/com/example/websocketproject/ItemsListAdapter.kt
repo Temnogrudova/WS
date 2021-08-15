@@ -8,16 +8,17 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import de.hdodenhof.circleimageview.CircleImageView
 
 
 class ItemsListAdapter(
-    private var items: List<GroceryModel?>
-    //private val interactionListener: InteractionListener
+    private var items: List<GroceryModel?>,
+    private val interactionListener: InteractionListener
 ) : RecyclerView.Adapter<ItemsListAdapter.BaseViewHolder>() {
 
-//    interface InteractionListener {
-//        fun onItemClick(v: View, feed: ItemModel?)
-//    }
+    interface InteractionListener {
+        fun onItemClick(v: View, feed: GroceryModel?)
+    }
     fun setData(items: List<GroceryModel?>) {
         this.items = items
         notifyDataSetChanged()
@@ -31,15 +32,22 @@ class ItemsListAdapter(
     abstract class BaseViewHolder (itemView: View) : RecyclerView.ViewHolder(itemView)
     inner class ItemViewHolder (itemView: View) : BaseViewHolder(itemView) {
         var mTitle: TextView = itemView.findViewById(R.id.title)
+        var mWeight: TextView = itemView.findViewById(R.id.weight)
+        var mImage: CircleImageView = itemView.findViewById(R.id.image)
 
         fun bind(item: GroceryModel?) {
             item?.name?.let {
                 mTitle.text = it
             }
-            itemView.background = ColorDrawable(Color.parseColor("#FF00FF00"))
-//            itemView.setOnClickListener { view ->
-//                interactionListener.onItemClick(view, item)
-//            }
+            item?.weight?.let {
+                mWeight.text = it
+            }
+            item?.bagColor?.let {
+                mImage.setImageDrawable(ColorDrawable(Color.parseColor(it)))
+            }
+            itemView.setOnClickListener { view ->
+                interactionListener.onItemClick(view, item)
+            }
         }
     }
 

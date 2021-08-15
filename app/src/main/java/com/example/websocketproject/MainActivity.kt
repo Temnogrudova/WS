@@ -2,14 +2,13 @@ package com.example.websocketproject
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.websocketproject.databinding.ActivityMainBinding
 import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
@@ -17,7 +16,6 @@ import java.net.URISyntaxException
 
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityMainBinding
     private var mWebSocketClient: WebSocketClient? = null
     private var items: ArrayList<GroceryModel?> = arrayListOf()
@@ -27,12 +25,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        initBtnsClick()
         initRecyclerView()
     }
 
     override fun onResume() {
         super.onResume()
         connectWebSocket()
+    }
+    private fun initBtnsClick() {
+        binding.btnConnect.setOnClickListener(View.OnClickListener {
+            connectWebSocket()
+
+        })
+        binding.btnDisconnect.setOnClickListener(View.OnClickListener {
+            mWebSocketClient?.close()
+
+        })
     }
 
     private fun initRecyclerView() {
@@ -47,15 +56,31 @@ class MainActivity : AppCompatActivity() {
                 )
             )
             binding.rvItems.adapter = ItemsListAdapter(
-                items
+                items,
+                adapterInteractionCallbackImpl
             )
         }
     }
-
+    private val adapterInteractionCallbackImpl = object:
+            ItemsListAdapter.InteractionListener {
+        override fun onItemClick(v: View, grocery: GroceryModel?) {
+            grocery?.let { it ->
+               Log.d("myLog", "clicked")
+                val secondFragment = SecondFragment()
+                loadFragment(secondFragment)
+            }
+        }
+    }
+    private fun loadFragment(fragment: Fragment){
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragment_second, fragment)
+        transaction.disallowAddToBackStack()
+        transaction.commit()
+    }
     private fun connectWebSocket() {
         val uri: URI
         try {
-            uri = URI("wss://superdo-groceries.herokuapp.com/receive")
+            uri = URI(WS_URL)
         } catch (e: URISyntaxException) {
             e.printStackTrace()
             return
@@ -63,8 +88,6 @@ class MainActivity : AppCompatActivity() {
         mWebSocketClient = object : WebSocketClient(uri) {
             override fun onOpen(serverHandshake: ServerHandshake) {
                 Log.i("Websocket", "Opened")
-                //mWebSocketClient!!.send("Hello from " + Build.MANUFACTURER + " " + Build.MODEL)
-               // fetchItems()
             }
 
             override fun onMessage(response: String) {
@@ -74,7 +97,6 @@ class MainActivity : AppCompatActivity() {
 
             override fun onClose(i: Int, s: String, b: Boolean) {
                 Log.i("Websocket", "Closed $s")
-                unregister()
 
             }
 
@@ -84,23 +106,7 @@ class MainActivity : AppCompatActivity() {
         }
         mWebSocketClient?.connect()
     }
-//
-//    private fun fetchItems() {
-//        mWebSocketClient?.send(
-//            "{\n" +
-//                    "    \"type\": \"subscribe\",\n" +
-//                    "    \"channels\": [{ \"name\": \"ticker\", \"product_ids\": [\"BTC-EUR\"] }]\n" +
-//                    "}"
-//        )
-//    }
 
-    private fun unregister() {
-        mWebSocketClient?.send(
-            "{\n" +
-                    "    \"type\": \"unsubscribe\",\n" +
-                    "}"
-        )
-    }
     override fun onPause() {
         super.onPause()
         mWebSocketClient?.close()
@@ -108,28 +114,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUI(response: String?) {
         response?.let {
-//            val moshi = Moshi.Builder().build()
-//            val adapter: JsonAdapter<ItemModel> = moshi.adapter(ItemModel::class.java)
-//            val bitcoin = adapter.fromJson(response)
-//            val bitcoin = Gson().fromJson<ItemModel>(response, ItemModel::class.java)
-//             items.add(bitcoin)
-
             val groceryItem = Gson().fromJson<GroceryModel>(response, GroceryModel::class.java)
             items.add(groceryItem)
             runOnUiThread {
                 (binding.rvItems.adapter as ItemsListAdapter).notifyDataSetChanged()
             }
-//            runOnUiThread {
-//                (binding.rvItems.adapter as ItemsListAdapter).setData(bitcoin)
-//            }
         }
     }
+
+    companion object {
+        const val WS_URL = "wss://superdo-groceries.herokuapp.com/receive"
+    }
 }
-data class GroceryModel(
-        @SerializedName("name")
-        var name: String? = null,
-        @SerializedName("bagColor")
-        var bagColor: String? = null,
-        @SerializedName("weight")
-        var weight: String? = null
-)
